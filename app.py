@@ -159,8 +159,7 @@ elif st.session_state.step in ["receipt"]:
     </div>
     """, unsafe_allow_html=True)
     st.write("## ")
-    sn == "1":
-  
+
     else:
         st.balloons(); st.success("All installments verified. Your admission is fully secured.")
 
