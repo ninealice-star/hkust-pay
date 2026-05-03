@@ -160,9 +160,6 @@ elif st.session_state.step in ["receipt"]:
     """, unsafe_allow_html=True)
     st.write("## ")
 
-    else:
-        st.balloons(); st.success("All installments verified. Your admission is fully secured.")
-
-
+    
 # 頁腳
 st.markdown("<p style='text-align:center; color:#999 !important; font-size:10px; margin-top:50px; margin-bottom: 60px;'>© 2024 The Hong Kong University of Science and Technology. All rights reserved.</p>", unsafe_allow_html=True)
