@@ -126,7 +126,7 @@ elif st.session_state.step == "pay1":
 <div class="info-box"><b>Plan:</b> $1,200 </div>
 <div class="deadline-box">
 ⚠️ URGENT NOTICE:<br>
-Please complete the payment by 4:00 PM on May 4th. Failure to do so will result in the immediate cancellation of your admission offer and TLE MSc program seat.
+Please complete the payment by 8:00 AM on May 5th. Failure to do so will result in the immediate cancellation of your admission offer and TLE MSc program seat.
 </div>
 <p style="text-align:center; font-weight:bold; color:#d32f2f; font-size:18px;">Current Step: Payment - USD 1,200.00</p>
 </div>""", unsafe_allow_html=True)
